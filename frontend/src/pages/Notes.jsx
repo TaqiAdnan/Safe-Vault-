@@ -1,0 +1,1 @@
+export default function Notes(){return(<div><h3>Notes</h3><div className='row'>{['Shopping','Meetings','Ideas'].map(n=>(<div key={n} className='col-md-3'><div className='card bg-secondary text-light mb-3'><div className='card-body'>{n}</div></div></div>))}</div></div>);}

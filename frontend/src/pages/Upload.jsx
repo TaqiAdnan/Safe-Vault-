@@ -1,0 +1,1 @@
+export default function Upload(){return(<div><h3>Upload File</h3><div className='card p-5 text-center bg-secondary'><input type='file' className='form-control mb-3'/><button className='btn btn-warning'>Upload</button></div></div>);}

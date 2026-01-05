@@ -1,0 +1,1 @@
+export default function Search(){return(<div><h3>Search</h3><input className='form-control mb-3' placeholder='Search in notes, files, folders'/></div>);}

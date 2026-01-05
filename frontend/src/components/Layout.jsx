@@ -1,0 +1,1 @@
+import Sidebar from './Sidebar';import TopNav from './TopNav';import { Outlet } from 'react-router-dom';export default function Layout(){return(<div className='d-flex vh-100 bg-dark text-light'><Sidebar/><div className='flex-grow-1'><TopNav/><div className='p-4'><Outlet/></div></div></div>);}

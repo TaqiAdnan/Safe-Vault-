@@ -1,0 +1,1 @@
+export default function TopNav(){return(<div className='bg-secondary p-3 d-flex justify-content-between'><span>SafeVault Directory</span><span className='badge bg-warning text-dark'>User</span></div>);}

@@ -1,0 +1,1 @@
+export default function Folders(){return(<div><h3>Folders</h3><div className='row'>{['Ideas','Work','IT','Personal'].map(f=>(<div key={f} className='col-md-3'><div className='card bg-secondary text-light mb-3'><div className='card-body'>{f}</div></div></div>))}</div></div>);}
