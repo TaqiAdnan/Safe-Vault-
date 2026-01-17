@@ -67,7 +67,7 @@ export default function MainPage() {
               </Link>
 
               <Link
-                to="/features"
+                to="/explore"
                 className="btn px-4 py-2"
                 style={{ background: "#6a625a", color: "white", border: "none" }}
               >
