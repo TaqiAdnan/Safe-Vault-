@@ -1,11 +1,23 @@
-const express = require("express"); // web framework
+const express = require("express");
+const cors = require("cors");
 
-const authRoutes = require("./routes/authRoutes"); // auth routes
+const authRoutes = require("./routes/authRoutes");
+const settingsRoutes = require("./routes/settings.routes.js");
 
-const app = express(); // create app
+const app = express();
 
-app.use(express.json()); // read json body
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-app.use("/auth", authRoutes); // prefix all auth routes
+app.use(express.json());
 
-module.exports = app; // export app
+app.use("/auth", authRoutes);
+app.use("/settings", settingsRoutes);
+
+app.use(require("./middlewares/errorHandler"));
+module.exports = app;
