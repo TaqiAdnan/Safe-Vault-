@@ -28,7 +28,7 @@ export default function RegisterStep1() {
     if (e.target.name === "password") {
       const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
       if (!passwordRegex.test(e.target.value)) {
-        setPasswordError("Password must contain at least one uppercase letter, one lowercase letter, one number, and one symbol.");
+        setPasswordError("Password must contain at least one uppercase letter, one lowercase letter, one number, one symbol and at least 8 chars.");
       } else {
         setPasswordError(null);
       }

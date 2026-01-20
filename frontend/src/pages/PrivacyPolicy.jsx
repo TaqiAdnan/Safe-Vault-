@@ -1,3 +1,4 @@
+import AuthLayout from "../components/AuthLayout";
 import { Link } from "react-router-dom";
 
 export default function PrivacyPolicy() {
@@ -5,7 +6,7 @@ export default function PrivacyPolicy() {
 
   return (
     <div className="min-vh-100" style={shell}>
-     
+      {/* Top strip like the app pages */}
       <div style={topStrip}>
         <div style={{ fontWeight: 700 }}>SafeVault Directory</div>
         <Link to="/vault/settings" style={backLink}>
@@ -150,7 +151,7 @@ function Section({ number, heading, children }) {
   );
 }
 
-
+/* ===== Styles (match SafeVault theme) ===== */
 const shell = {
   background: "#1f2428",
   color: "#fff",

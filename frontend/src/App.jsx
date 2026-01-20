@@ -53,7 +53,7 @@ export default function App() {
       {/* Vault (nested routes) */}
       <Route path="/vault" element={<Layout />}>
         <Route index element={<Navigate to="/vault/search" replace />} />
-
+        <Route path="enable-mfa" element={<EnableMfa />} />
         <Route path="folders" element={<Folders />} />
         {/* folder details */}
         <Route path="folders/:folderId" element={<FolderDetails />} />
@@ -89,7 +89,7 @@ export default function App() {
       <Route path="/subscriptions" element={<Subscriptions />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/explore" element={<ExploreFeatures />} />
-
+      <Route path="/privacy" element={<PrivacyPolicy />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

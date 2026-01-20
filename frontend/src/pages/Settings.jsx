@@ -140,11 +140,12 @@ export default function Settings() {
                     }
                   }}
                 >
-                  DISABLE MFA
+                  DISABLE Multifactor Auth
                 </button>
               ) : (
-                <button className="btn" style={pillBtn} onClick={() => navigate("/vault/mfa")}>
-                  ENABLE MFA
+                <button className="btn" style={pillBtn} onClick={() => navigate("/vault/enable-mfa")}
+>
+                  ENABLE Multifactor Auth
                 </button>
               )}
 
