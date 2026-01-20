@@ -95,7 +95,7 @@ export default function Notes() {
     if (!t) return;
 
     try {
-      // expected: PATCH /notes/:id {title, content} => { data: {id,title,content,updatedAt}}
+      
       const r = await api(`/notes/${activeId}`, {
         method: "PATCH",
         body: { title: t, content: c },
@@ -137,7 +137,7 @@ export default function Notes() {
 
   const addNew = async () => {
     try {
-      // expected: POST /notes {title, content} => { data: {id,title,content,updatedAt}}
+      
       const r = await api("/notes", {
         method: "POST",
         body: { title: "New note", content: "" },
@@ -177,7 +177,6 @@ export default function Notes() {
       <div style={topRow}>
         <div style={topLeft}>
           <div style={topTitle}>Notes</div>
-          <div style={caret}>⌄</div>
           {loading && <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Loading…</div>}
         </div>
 

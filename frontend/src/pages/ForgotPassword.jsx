@@ -53,7 +53,7 @@ export default function ForgotPassword() {
 
   const sendCode = async () => {
     const em = email.trim().toLowerCase();
-    if (!em) return alert("Please enter your email address.");
+    if (!em) return alert(" enter your email address.");
   
     try {
       setLoading(true);

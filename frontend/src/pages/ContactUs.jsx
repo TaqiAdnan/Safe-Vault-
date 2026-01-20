@@ -38,7 +38,6 @@ export default function ContactUs() {
             <button type="submit" style={{ ...btn, opacity: canSend(form) ? 1 : 0.6 }} disabled={!canSend(form)}>
               Send
             </button>
-            <div style={hint}>Demo form • backend can be added later</div>
           </div>
         </form>
       </div>

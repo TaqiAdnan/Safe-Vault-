@@ -18,6 +18,7 @@ router.post("/", validate(createFolderSchema), asyncHandler(vaultController.crea
 
 // folder operations
 router.get("/:id/items", validateObjectId("id"), asyncHandler(vaultController.getItems));
+router.get("/:id/export", validateObjectId("id"), asyncHandler(vaultController.exportFolder));
 router.post("/:id/folders", validateObjectId("id"), validate(createFolderSchema), asyncHandler(vaultController.createSubFolder));
 router.post("/:id/files", validateObjectId("id"), validate(createFileSchema), asyncHandler(vaultController.createFile));
 router.patch("/:id", validateObjectId("id"), validate(renameFolderSchema), asyncHandler(vaultController.rename));

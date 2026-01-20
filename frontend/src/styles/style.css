@@ -1,0 +1,312 @@
+/* src/styles/AboutUs.css */
+
+.about-container {
+  background-color: #1a1a1a;
+  color: #f2f2f2;
+  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+  max-width: 900px;
+  margin: auto;
+}
+
+.about-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.about-hero h1 {
+  color: #ffa500;
+  font-size: 2.5rem;
+}
+
+.about-section {
+  margin-bottom: 2rem;
+}
+
+.about-section h2 {
+  color: #ffa500;
+  margin-bottom: 0.5rem;
+}
+
+.about-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.about-section li {
+  padding: 0.3rem 0;
+  border-left: 4px solid #ffa500;
+  padding-left: 1rem;
+}
+/* src/styles/HelpCenter.css */
+
+.help-container {
+  background-color: #1a1a1a;
+  color: #f2f2f2;
+  padding: 2rem;
+  max-width: 900px;
+  margin: auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.help-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.help-hero h1 {
+  color: #ffa500;
+  font-size: 2.5rem;
+}
+
+.faq-section h2,
+.contact-section h2 {
+  color: #ffa500;
+  margin-bottom: 1rem;
+}
+
+.faq-item {
+  margin-bottom: 1.5rem;
+}
+
+.faq-item h3 {
+  font-size: 1.1rem;
+  color: #ffcc66;
+}
+
+.faq-item p {
+  margin-top: 0.5rem;
+  line-height: 1.6;
+}
+
+.contact-section p a {
+  color: #ffa500;
+  text-decoration: underline;
+}
+/* src/styles/Subscriptions.css */
+
+.subs-container {
+  background-color: #1a1a1a;
+  color: #f2f2f2;
+  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+  text-align: center;
+}
+
+.subs-title {
+  font-size: 2.5rem;
+  color: #ffa500;
+  margin-bottom: 2rem;
+}
+
+.plans-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.plan-card {
+  background-color: #2b2b2b;
+  border: 1px solid #ffa500;
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 300px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.plan-card:hover {
+  transform: scale(1.03);
+  border-color: #ffcc66;
+}
+
+.plan-card h2 {
+  color: #ffa500;
+  margin-bottom: 0.5rem;
+}
+
+.price {
+  font-size: 1.8rem;
+  margin: 1rem 0;
+}
+
+.plan-card ul {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+}
+
+.plan-card li {
+  padding: 0.4rem 0;
+  border-left: 3px solid #ffa500;
+  padding-left: 0.7rem;
+}
+
+.select-btn {
+  margin-top: 1.5rem;
+  background-color: #ffa500;
+  color: #1a1a1a;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.select-btn:hover {
+  background-color: #ffcc66;
+}
+.contact-container {
+  background-color: #1a1a1a;
+  color: #f2f2f2;
+  padding: 2rem;
+  max-width: 600px;
+  margin: auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.contact-container h1 {
+  color: #ffa500;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contact-form input,
+.contact-form textarea {
+  padding: 0.8rem;
+  border: none;
+  border-radius: 5px;
+  background-color: #2b2b2b;
+  color: #f2f2f2;
+}
+
+.contact-form button {
+  background-color: #ffa500;
+  color: #1a1a1a;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.email-support {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.email-support a {
+  color: #ffa500;
+}
+.terms-container {
+  background-color: #1a1a1a;
+  color: #f2f2f2;
+  padding: 2rem;
+  max-width: 800px;
+  margin: auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.terms-container h1 {
+  color: #ffa500;
+  margin-bottom: 1rem;
+}
+
+.terms-container ul {
+  margin-top: 1rem;
+  list-style: none;
+  padding-left: 0;
+}
+
+.terms-container li {
+  margin-bottom: 0.8rem;
+  border-left: 4px solid #ffa500;
+  padding-left: 1rem;
+}
+.team-container {
+  background-color: #1a1a1a;
+  color: #f2f2f2;
+  padding: 2rem;
+  max-width: 900px;
+  margin: auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.team-container h1 {
+  color: #ffa500;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.team-members {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.team-card {
+  background-color: #2b2b2b;
+  border: 1px solid #ffa500;
+  border-radius: 8px;
+  padding: 1rem;
+  width: 220px;
+  text-align: center;
+}
+
+.team-card h2 {
+  color: #ffa500;
+  margin-bottom: 0.5rem;
+}
+.main-footer {
+  background-color: #1a1a1a;
+  color: #d6d6d6;
+  border-top: 2px solid #ffa500;
+  margin-top: 3rem;
+}
+
+.footer-title {
+  color: #ffa500;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.footer-address {
+  color: #d6d6d6;
+  line-height: 1.8;
+}
+
+.footer-text {
+  color: #f6a300;
+}
+
+.footer-link {
+  color: #ffa500;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.footer-link:hover {
+  color: #ffcc66;
+  text-decoration: underline;
+}
+
+.social-icon {
+  transition: all 0.3s ease !important;
+}
+
+.social-icon:hover {
+  transform: scale(1.1) !important;
+}
+
+.footer-divider {
+  border-color: rgba(255, 165, 0, 0.3);
+  margin: 2rem 0;
+}

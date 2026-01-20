@@ -51,7 +51,7 @@ export default function Upload() {
     }
 
     const fd = new FormData();
-    files.forEach((f) => fd.append("files", f)); // must match backend field name
+    files.forEach((f) => fd.append("files", f)); 
 
     setUploading(true);
     setProgress(0);

@@ -1,3 +1,4 @@
+import AuthLayout from "../components/AuthLayout";
 export default function AboutUs() {
     return (
       <div style={page}>

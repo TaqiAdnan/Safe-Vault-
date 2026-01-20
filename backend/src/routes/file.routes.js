@@ -10,5 +10,5 @@ const fileController = require("../controllers/file.controller");
 router.use(auth);
 
 router.delete("/:id", validateObjectId("id"), asyncHandler(fileController.deleteFile));
-
+router.patch("/:id/rename", validateObjectId("id"), asyncHandler(fileController.renameFile));
 module.exports = router;

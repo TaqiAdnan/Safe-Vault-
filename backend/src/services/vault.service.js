@@ -125,14 +125,16 @@ async function getFolderItems(userId, folderId) {
   const folder = await ensureFolderOwned(userId, folderId);
 
   const [subfolders, files] = await Promise.all([
-    Folder.find({ user: userId, parent: folderId }).sort({ createdAt: -1 }).select("name"),
-    File.find({ user: userId, folder: folderId }).sort({ createdAt: -1 }).select("name sizeBytes"),
+    Folder.find({ user: userId, parent: folderId })
+      .sort({ createdAt: -1 })
+      .select("name"),
+    // IMPORTANT: file schema uses originalName (not name)
+    File.find({ user: userId, folder: folderId })
+      .sort({ createdAt: -1 })
+      .select("originalName sizeBytes mimeType createdAt"),
   ]);
 
-  // counts of each subfolder (direct items)
   const subIds = subfolders.map((f) => f._id);
-
-  // ✅ important: aggregate needs ObjectId
   const userObjId = new mongoose.Types.ObjectId(userId);
 
   const [subCounts, fileCounts] = await Promise.all([
@@ -160,16 +162,21 @@ async function getFolderItems(userId, folderId) {
   const fileItems = files.map((fl) => ({
     id: fl._id.toString(),
     type: "file",
-    name: fl.name,
+    // send a "name" field to frontend, based on originalName
+    name: fl.originalName,
     sizeBytes: fl.sizeBytes || 0,
     size: formatBytes(fl.sizeBytes || 0),
+    mimeType: fl.mimeType || "",
+    createdAt: fl.createdAt,
   }));
 
   return {
     folder: { id: folderId, name: folder.name, parent: folder.parent },
+    // IMPORTANT: merge arrays correctly
     items: [...folderItems, ...fileItems],
   };
 }
+
 
 async function createFileMetadata(userId, folderId, { name, sizeBytes, mimeType }) {
   await ensureFolderOwned(userId, folderId);
@@ -205,6 +212,32 @@ async function deleteFile(userId, fileId) {
   if (!file) throw new AppError("File not found", 404, "FILE_NOT_FOUND");
   return { ok: true };
 }
+const path = require("path");
+const fs = require("fs");
+
+async function exportFolder(userId, folderId) {
+  const folder = await ensureFolderOwned(userId, folderId);
+
+ 
+  const files = await File.find({ user: userId, folder: folderId })
+    .sort({ createdAt: -1 })
+    .select("originalName storagePath mimeType sizeBytes createdAt");
+
+  return {
+    id: folderId,
+    name: folder.name,
+    files: files.map((f) => ({
+      id: f._id.toString(),
+      name: f.originalName,          
+      sizeBytes: f.sizeBytes || 0,
+      mimeType: f.mimeType || "",
+      createdAt: f.createdAt,
+      storagePath: f.storagePath,    
+    })),
+  };
+}
+
+
 
 module.exports = {
   listRootFolders,
@@ -215,4 +248,5 @@ module.exports = {
   getFolderItems,
   createFileMetadata,
   deleteFile,
+  exportFolder, 
 };

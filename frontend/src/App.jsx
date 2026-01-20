@@ -49,18 +49,18 @@ export default function App() {
 
       {/* Vault (nested routes) */}
       <Route path="/vault" element={<Layout />}>
-        <Route index element={<Folders />} />
+        <Route index element={<Navigate to="/vault/search" replace />} />
 
         <Route path="folders" element={<Folders />} />
-        {/* ✅ folder details */}
+        {/* folder details */}
         <Route path="folders/:folderId" element={<FolderDetails />} />
-        {/* ✅ upload inside a folder */}
+        {/*upload inside a folder */}
         <Route path="folders/:folderId/upload" element={<Upload />} />
 
         <Route path="notes" element={<Notes />} />
         <Route path="search" element={<Search />} />
 
-        {/* ⚠️ optional: keep old upload route but redirect (because Upload needs folderId now) */}
+        
         <Route path="upload" element={<Navigate to="/vault/folders" replace />} />
 
         <Route path="settings" element={<Settings />} />
@@ -75,7 +75,7 @@ export default function App() {
       <Route path="/notes" element={<Navigate to="/vault/notes" replace />} />
       <Route path="/search" element={<Navigate to="/vault/search" replace />} />
 
-      {/* ⚠️ old upload route redirect */}
+      {/* old upload route redirect */}
       <Route path="/upload" element={<Navigate to="/vault/folders" replace />} />
 
       <Route path="/settings" element={<Navigate to="/vault/settings" replace />} />

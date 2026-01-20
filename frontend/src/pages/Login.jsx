@@ -35,7 +35,7 @@ export default function Login() {
 
       if (data.token) {
         localStorage.setItem("authToken", data.token);
-        navigate(data.redirectTo || "/vault");
+        navigate(data.redirectTo || "/vault/search");
         return;
       }
         if (data.code === "NEW_DEVICE" && data.tempToken) {

@@ -84,10 +84,40 @@ export default function Folders() {
     navigate(`/vault/folders/${id}`);
   };
 
-  const exportFolder = (id) => {
-    closeMenu();
-    alert("Export will be implemented later.");
-  };
+const exportFolder = async (id) => {
+  closeMenu();
+
+  try {
+    const res = await fetch(`${BASE_URL}/folders/${id}/export`, {
+      method: "GET",
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.message || "Export failed");
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `folder-${id}.zip`; 
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+
+
 
   const saveModal = async () => {
     const trimmed = nameInput.trim();
@@ -196,7 +226,7 @@ export default function Folders() {
                     <MenuItem label="Open folder" onClick={() => openFolder(f.id)} />
                     <MenuItem label="Rename" onClick={() => openRename(f.id)} />
                     <div style={menuDivider} />
-                    <MenuItem label="Export" onClick={() => exportFolder(f.id)} />
+                    <MenuItem label="Export" onClick={() => exportFolder(f.id, f.name)} />
                     <MenuItem label="Delete" danger onClick={() => openDelete(f.id)} />
                   </div>
                 )}
@@ -257,7 +287,7 @@ export default function Folders() {
 
             {modal.mode === "delete" && (
               <div style={dangerBox}>
-                Tip: Deleting by mistake is a common user error — a confirmation step helps usability.
+                 please look into what you are deleting before you delete this folder.
               </div>
             )}
 
