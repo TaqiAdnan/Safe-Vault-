@@ -15,13 +15,25 @@ export default function RegisterStep1() {
   });
 
   const [alert, setAlert] = useState(null);
+  const [passwordError, setPasswordError] = useState(null);
 
   const showAlert = (message) => {
     setAlert({ message });
     setTimeout(() => setAlert(null), 3000);
   };
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+    if (e.target.name === "password") {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+      if (!passwordRegex.test(e.target.value)) {
+        setPasswordError("Password must contain at least one uppercase letter, one lowercase letter, one number, and one symbol.");
+      } else {
+        setPasswordError(null);
+      }
+    }
+  };
 
   const onNext = async (e) => {
     e.preventDefault();
@@ -32,6 +44,11 @@ export default function RegisterStep1() {
     }
     if (form.password !== form.confirmPassword) {
       showAlert("Passwords do not match.");
+      return;
+    }
+
+    if (passwordError) {
+      showAlert("Please fix the password errors before continuing.");
       return;
     }
 
@@ -132,6 +149,7 @@ export default function RegisterStep1() {
                 placeholder="enter password"
                 style={inputStyle}
               />
+              {passwordError && <div style={passwordErrorStyle}>{passwordError}</div>}
             </Field>
 
             <Field label="CONFIRM PASSWORD">
@@ -147,7 +165,7 @@ export default function RegisterStep1() {
             </Field>
 
             <div className="d-flex justify-content-end">
-              <button type="submit" className="btn" style={pillBtn} disabled={loading}>
+              <button type="submit" className="btn" style={pillBtn} disabled={loading || passwordError}>
                 {loading ? "..." : "NEXT"}
               </button>
             </div>
@@ -200,4 +218,11 @@ const pillBtn = {
   borderRadius: 999,
   fontWeight: 800,
   padding: "6px 18px",
+};
+
+const passwordErrorStyle = {
+  color: "red",
+  fontSize: "12px",
+  marginTop: "6px",
+  fontWeight: "500",
 };
