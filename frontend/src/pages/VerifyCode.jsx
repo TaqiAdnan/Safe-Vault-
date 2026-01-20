@@ -28,6 +28,12 @@ export default function VerifyCode() {
 
   const [loading, setLoading] = useState(false);
   const [hint, setHint] = useState("");
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
 
   useEffect(() => {
     const token = sessionStorage.getItem("signup_token");
@@ -58,11 +64,11 @@ export default function VerifyCode() {
 
   const onContinue = async () => {
     const entered = digits.join("");
-    if (entered.length !== 6) return alert("Please enter the 6-digit code.");
+    if (entered.length !== 6) return showAlert("Please enter the 6-digit code.");
 
     const signupToken = sessionStorage.getItem("signup_token");
     if (!signupToken) {
-      alert("Signup session missing. Please start again.");
+      showAlert("Signup session missing. Please start again.");
       navigate("/register/step1");
       return;
     }
@@ -73,7 +79,7 @@ export default function VerifyCode() {
       const data = await api("/auth/signup/verify", {
         method: "POST",
         token: signupToken,
-        body: { code: entered }, //  backend expects "code"
+        body: { code: entered },
       });
 
       localStorage.setItem("authToken", data.token);
@@ -84,12 +90,10 @@ export default function VerifyCode() {
 
       navigate(data.redirectTo || "/vault");
     } catch (err) {
-      if (err.code === "OTP_EXPIRED") {
-        alert("Code expired. Please request a new code.");
-      } else if (err.code === "OTP_INVALID") {
-        alert("Invalid code. Please try again.");
+      if (err.code === "OTP_INVALID") {
+        showAlert("Invalid code. Please try again.");
       } else {
-        alert(err.message || "Verification failed");
+        showAlert(err.message || "Verification failed");
       }
     } finally {
       setLoading(false);
@@ -97,12 +101,32 @@ export default function VerifyCode() {
   };
 
   const onResend = () => {
-    alert("To resend a new code, please go back to Step 2 and submit again.");
+    showAlert("To resend a new code, please go back to Step 2 and submit again.");
     navigate("/register/step2");
   };
 
   return (
     <AuthLayout titleLeft="SafeVault Directory" titleRight="VERIFY YOUR ACCOUNT">
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <div className="row g-3">
         <div className="col-12 col-md-3">
           <ul style={{ color: "#d6d6d6", margin: 0, paddingLeft: 18, lineHeight: 1.9 }}>

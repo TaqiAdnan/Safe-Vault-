@@ -17,7 +17,7 @@ export default function ConfirmDevice() {
   }, []);
 
   const [form, setForm] = useState({
-    deviceName: "",       // this is what backend expects
+    deviceName: "",     
     securityAnswer: "",
   });
 
@@ -26,7 +26,7 @@ export default function ConfirmDevice() {
       navigate("/login", { replace: true });
         return;
     }
-    // default suggestion
+    
     setForm((p) => ({ ...p, deviceName: p.deviceName || "My device" }));
   }, [session, navigate]);
 
@@ -160,7 +160,7 @@ export default function ConfirmDevice() {
   );
 }
 
-/* styles */
+
 const card = {
   width: "100%",
   maxWidth: 440,

@@ -16,6 +16,13 @@ export default function RegisterStep2() {
     acceptTerms: false,
   });
 
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
   useEffect(() => {
     const token = sessionStorage.getItem("signup_token");
     const saved = sessionStorage.getItem("signup_step1");
@@ -33,11 +40,11 @@ export default function RegisterStep2() {
     e.preventDefault();
 
     if ( !form.securityQuestion || !form.securityAnswer) {
-      alert("Please complete all fields.");
+      showAlert("Please complete all fields.");
       return;
     }
     if (!form.acceptTerms) {
-      alert("Please accept Terms & Conditions.");
+      showAlert("Please accept Terms & Conditions.");
       return;
     }
 
@@ -65,7 +72,7 @@ export default function RegisterStep2() {
 
       navigate("/verify-code");
     } catch (err) {
-      alert(err.message || "Signup step 2 failed");
+      showAlert(err.message || "Signup step 2 failed");
     } finally {
       setLoading(false);
     }
@@ -75,6 +82,26 @@ export default function RegisterStep2() {
 
   return (
     <AuthLayout titleLeft="SafeVault Directory" titleRight="BECOME A MEMBER NOW!">
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <div className="row g-3">
         <div className="col-12 col-md-3">
           <ul style={{ color: "#d6d6d6", margin: 0, paddingLeft: 18, lineHeight: 1.9 }}>
@@ -105,7 +132,7 @@ export default function RegisterStep2() {
                 style={selectStyle}
               >
                 <option value="">chose your security question</option>
-                <option value="What is your first pet’s name?">What is your first pet’s name?</option>
+                <option value="What is your first pet's name?">What is your first pet's name?</option>
                 <option value="In what city were you born?">In what city were you born?</option>
                 <option value="What is the name of your first school?">What is the name of your first school?</option>
               </select>

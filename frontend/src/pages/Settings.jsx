@@ -48,7 +48,7 @@ export default function Settings() {
     };
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const onDevices = () => navigate("/vault/devices");

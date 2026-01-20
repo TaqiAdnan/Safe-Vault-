@@ -10,11 +10,16 @@ export default function FolderDetails() {
   const [items, setItems] = useState([]);
   const [folderName, setFolderName] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // which card menu is open
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [alert, setAlert] = useState(null); 
+  const [dialog, setDialog] = useState(null); 
 
   const token = localStorage.getItem("authToken");
+
+  const showAlert = (message, type = "error") => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 3000);
+  };
 
   const api = async (path, { method = "GET", body } = {}) => {
     const res = await fetch(`${BASE_URL}${path}`, {
@@ -44,14 +49,14 @@ export default function FolderDetails() {
         setItems(payload.items || []);
         setFolderName(payload.folder?.name || "");
       } catch (e) {
-        alert(e.message);
+        showAlert(e.message);
       } finally {
         setLoading(false);
       }
     };
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [folderId]);
 
   const title = useMemo(() => {
@@ -62,57 +67,64 @@ export default function FolderDetails() {
   const addItem = async () => {
     closeMenu();
 
-    const type = prompt("Type 'folder' or 'file' to add:");
-    const t = (type || "").toLowerCase();
-    if (!t || !["folder", "file"].includes(t)) {
-      alert("Please type 'folder' or 'file'.");
-      return;
-    }
+    setDialog({
+      type: 'select',
+      title: 'Add New Item',
+      message: 'What would you like to add?',
+      options: [
+        { label: '📁 Folder', value: 'folder' },
+        { label: '📄 File', value: 'file' }
+      ],
+      onConfirm: async (selected) => {
+        setDialog(null);
+        
+        if (selected === 'file') {
+          navigate(`/vault/folders/${folderId}/upload`);
+          return;
+        }
 
-    // For files: navigate to Upload screen (real upload)
-    if (t === "file") {
-      navigate(`/vault/folders/${folderId}/upload`);
-      return;
-    }
+        setDialog({
+          type: 'input',
+          title: 'Create Folder',
+          message: 'Enter folder name:',
+          placeholder: 'My Folder',
+          onConfirm: async (name) => {
+            setDialog(null);
+            if (!name?.trim()) return;
 
-    // For folder: create subfolder
-    const name = prompt("Enter folder name:");
-    if (!name) return;
-
-    try {
-      const r = await api(`/folders/${folderId}/folders`, {
-        method: "POST",
-        body: { name },
-      });
-
-      // backend returns { id, type:'folder', name, count }
-      setItems((prev) => [...prev, r.data]);
-    } catch (e) {
-      alert(e.message);
-    }
+            try {
+              const r = await api(`/folders/${folderId}/folders`, {
+                method: "POST",
+                body: { name: name.trim() },
+              });
+              setItems((prev) => [...prev, r.data]);
+              showAlert("Folder created successfully!", "success");
+            } catch (e) {
+              showAlert(e.message);
+            }
+          },
+          onCancel: () => setDialog(null)
+        });
+      },
+      onCancel: () => setDialog(null)
+    });
   };
 
   const openItem = (item) => {
     closeMenu();
-
     if (item.type === "folder") {
       navigate(`/vault/folders/${item.id}`);
       return;
     }
-
-    // file: preview (browser will preview PDFs/images, download others)
     window.open(`${BASE_URL}/files/${item.id}/download`, "_blank");
   };
 
   const downloadFile = async (item) => {
     closeMenu();
-
     try {
       const res = await fetch(`${BASE_URL}/files/${item.id}/download`, {
         method: "GET",
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
 
       if (!res.ok) {
@@ -122,80 +134,199 @@ export default function FolderDetails() {
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
       a.download = item.name || "file";
       document.body.appendChild(a);
       a.click();
       a.remove();
-
       window.URL.revokeObjectURL(url);
+      showAlert("File downloaded successfully!", "success");
     } catch (e) {
-      alert(e.message);
+      showAlert(e.message);
     }
   };
 
   const renameItem = async (item) => {
-    closeMenu();
+  closeMenu();
 
-    const newName = prompt("Enter new name:", item.name || "");
-    if (!newName) return;
+  setDialog({
+    type: 'input',
+    title: `Rename ${item.type === 'folder' ? 'Folder' : 'File'}`,
+    message: 'Enter new name:',
+    defaultValue: item.type === 'file' ? item.name.replace(/\.[^/.]+$/, "") : item.name,
+    placeholder: item.type === 'file' ? item.name.replace(/\.[^/.]+$/, "") : item.name,
+   onConfirm: async (newName) => {
+  
+  if (!newName?.trim()) {
+    showAlert("Please enter the new name", "error");
+    return; 
+  }
 
-    const trimmed = newName.trim();
-    if (!trimmed) return;
+  setDialog(null); 
 
-    try {
-      if (item.type === "folder") {
-        // rename folder
-        const r = await api(`/folders/${item.id}`, {
-          method: "PATCH",
-          body: { name: trimmed },
-        });
+  try {
+    if (item.type === "folder") {
+      const r = await api(`/folders/${item.id}`, {
+        method: "PATCH",
+        body: { name: newName.trim() },
+      });
+      setItems((prev) =>
+        prev.map((x) => (x.id === item.id ? { ...x, name: r.data.name } : x))
+      );
+    } else {
+ 
+      const ext = item.name.includes(".") ? "." + item.name.split(".").pop() : "";
+      const fullName = newName.trim() + ext;
 
-        setItems((prev) =>
-          prev.map((x) => (x.id === item.id ? { ...x, name: r.data.name } : x))
-        );
-      } else {
-        // rename file (most common REST style)
-        // If your backend uses a different endpoint, tell me what it is and I’ll adjust.
-        const r = await api(`/files/${item.id}`, {
-          method: "PATCH",
-          body: { name: trimmed },
-        });
+      const r = await api(`/files/${item.id}/rename`, {
+        method: "PATCH",
+        body: { name: fullName },
+      });
 
-        // some backends return { data: {...} } or just { name }
-        const updatedName = r?.data?.originalName || r?.data?.name || r?.name || trimmed;
-
-        setItems((prev) =>
-          prev.map((x) => (x.id === item.id ? { ...x, name: updatedName } : x))
-        );
-      }
-    } catch (e) {
-      alert(e.message);
+      const updatedName = r?.data?.originalName || r?.data?.name || fullName;
+      setItems((prev) =>
+        prev.map((x) => (x.id === item.id ? { ...x, name: updatedName } : x))
+      );
     }
-  };
+
+    showAlert("Renamed successfully!", "success");
+  } catch (e) {
+    showAlert(e.message, "error");
+  }
+},
+
+    onCancel: () => setDialog(null)
+  });
+};
+
 
   const deleteItem = async (item) => {
     closeMenu();
-
-    if (!confirm("Delete this item?")) return;
-
-    try {
-      if (item.type === "folder") {
-        await api(`/folders/${item.id}`, { method: "DELETE" });
-      } else {
-        await api(`/files/${item.id}`, { method: "DELETE" });
-      }
-
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-    } catch (e) {
-      alert(e.message);
-    }
+    
+    setDialog({
+      type: 'confirm',
+      title: `Delete ${item.type === 'folder' ? 'Folder' : 'File'}`,
+      message: `Are you sure you want to delete "${item.name}"?`,
+      subMessage: item.type === 'folder' ? 'All contents will be permanently deleted.' : 'This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      danger: true,
+      onConfirm: async () => {
+        setDialog(null);
+        try {
+          if (item.type === "folder") {
+            await api(`/folders/${item.id}`, { method: "DELETE" });
+          } else {
+            await api(`/files/${item.id}`, { method: "DELETE" });
+          }
+          setItems((prev) => prev.filter((i) => i.id !== item.id));
+          showAlert("Deleted successfully!", "success");
+        } catch (e) {
+          showAlert(e.message);
+        }
+      },
+      onCancel: () => setDialog(null)
+    });
   };
 
   return (
     <div style={wrap} onClick={closeMenu}>
+      {/* Alert Popup */}
+      {alert && (
+  <div style={{
+    position: "fixed",
+    top: 20,
+    left: "50%",
+    transform: "translateX(-50%)",
+    padding: "12px 18px",
+    borderRadius: 8,
+    background: alert.type === 'success' ? "#f6a300" : "#ff5a5a", // برتقالي للنجاح، أحمر للخطأ
+    color: "#111", 
+    fontWeight: 700,
+    zIndex: 10001,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    display: "flex",
+    alignItems: "center"
+  }}>
+    {alert.message}
+  </div>
+)}
+
+
+      {/* Dialog Overlay */}
+      {dialog && (
+        <div style={overlay} onClick={() => dialog.onCancel?.()}>
+          <div style={dialogBox} onClick={(e) => e.stopPropagation()}>
+            <div style={dialogHeader}>
+              <h3 style={dialogTitle}>{dialog.title}</h3>
+            </div>
+
+            <div style={dialogBody}>
+              <p style={dialogMessage}>{dialog.message}</p>
+              {dialog.subMessage && (
+                <p style={dialogSubMessage}>{dialog.subMessage}</p>
+              )}
+
+              {dialog.type === 'select' && (
+                <div style={optionsContainer}>
+                  {dialog.options.map((opt) => (
+                    <button
+                      key={opt.value}
+                      style={optionButton}
+                      onClick={() => dialog.onConfirm(opt.value)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {dialog.type === 'input' && (
+                <input
+                  type="text"
+                  autoFocus
+                  defaultValue={dialog.defaultValue || ''}
+                  placeholder={dialog.placeholder}
+                  style={dialogInput}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      dialog.onConfirm(e.target.value);
+                    }
+                  }}
+                  id="dialog-input"
+                />
+              )}
+            </div>
+
+            <div style={dialogFooter}>
+              <button
+                style={btnSecondary}
+                onClick={() => dialog.onCancel?.()}
+              >
+                {dialog.cancelText || 'Cancel'}
+              </button>
+              
+              {dialog.type !== 'select' && (
+                <button
+                  style={dialog.danger ? btnDanger : btnPrimary}
+                  onClick={() => {
+                    if (dialog.type === 'input') {
+                      const input = document.getElementById('dialog-input');
+                      dialog.onConfirm(input?.value || '');
+                    } else {
+                      dialog.onConfirm();
+                    }
+                  }}
+                >
+                  {dialog.confirmText || 'OK'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={board} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div style={topRow}>
@@ -222,19 +353,11 @@ export default function FolderDetails() {
             <div key={item.id} style={tileWrap}>
               <div style={card} onClick={() => openItem(item)}>
                 <div style={iconBox}>{item.type === "folder" ? "📁" : "📄"}</div>
-
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={name} title={item.name}>
-                    {item.name}
-                  </div>
-                  <div style={meta}>
-                    {item.type === "folder"
-                      ? `${item.count || 0} items`
-                      : item.size || "—"}
-                  </div>
+                  <div style={name} title={item.name}>{item.name}</div>
+                  <div style={meta}>{item.type === "folder" ? `${item.count || 0} items` : item.size || "—"}</div>
                 </div>
 
-                {/* menu dots */}
                 <button
                   type="button"
                   style={dotsBtn}
@@ -248,14 +371,8 @@ export default function FolderDetails() {
                   ⋯
                 </button>
 
-                {/* dropdown menu */}
                 {menuOpenId === item.id && (
-                  <div
-                    style={menu}
-                    onClick={(e) => e.stopPropagation()}
-                    role="menu"
-                    aria-label="Item actions"
-                  >
+                  <div style={menu} onClick={(e) => e.stopPropagation()} role="menu" aria-label="Item actions">
                     {item.type === "folder" ? (
                       <>
                         <MenuItem label="Open folder" onClick={() => openItem(item)} />
@@ -288,10 +405,7 @@ function MenuItem({ label, onClick, danger }) {
     <button
       type="button"
       onClick={onClick}
-      style={{
-        ...menuItem,
-        color: danger ? "#ffb4b4" : "#e9e9e9",
-      }}
+      style={{ ...menuItem, color: danger ? "#ffb4b4" : "#e9e9e9" }}
       role="menuitem"
     >
       {label}
@@ -299,137 +413,152 @@ function MenuItem({ label, onClick, danger }) {
   );
 }
 
-/* =========================
-   Styles (keep your design)
-========================= */
-const wrap = {
-  width: "100%",
-  display: "flex",
-  justifyContent: "center",
-  paddingTop: 18,
-};
 
-const board = {
-  width: "100%",
-  maxWidth: 980,
-  background: "#0f0f0f",
-  borderRadius: 16,
-  padding: 22,
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-  minHeight: 520,
-};
-
-const topRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 18,
-  flexWrap: "wrap",
-};
-
+const wrap = { width: "100%", display: "flex", justifyContent: "center", paddingTop: 18 };
+const board = { width: "100%", maxWidth: 980, background: "#0f0f0f", borderRadius: 16, padding: 22, border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 10px 30px rgba(0,0,0,0.35)", minHeight: 520 };
+const topRow = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, flexWrap: "wrap" };
 const titleStyle = { color: "#fff", fontWeight: 900, fontSize: 18 };
 const subStyle = { color: "#9aa0a6", fontSize: 12 };
+const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 };
+const tileWrap = { width: "100%" };
+const card = { position: "relative", background: "#6a625a", borderRadius: 10, padding: 14, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" };
+const iconBox = { width: 44, height: 34, borderRadius: 8, background: "rgba(246,163,0,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 };
+const name = { color: "#fff", fontWeight: 900, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const meta = { color: "rgba(255,255,255,0.7)", fontSize: 11 };
+const btnGhost = { background: "transparent", border: "1px solid rgba(246,163,0,0.4)", color: "#f6a300", borderRadius: 999, fontWeight: 900, padding: "8px 14px", cursor: "pointer" };
+const btnPrimary = { background: "#f6a300", border: "none", color: "#111", borderRadius: 999, fontWeight: 900, padding: "8px 14px", cursor: "pointer" };
+const dotsBtn = { border: "none", background: "transparent", color: "#fff", fontSize: 22, lineHeight: "22px", padding: "2px 6px", cursor: "pointer" };
+const menu = { position: "absolute", top: 52, right: 10, width: 160, background: "rgba(10,10,10,0.92)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: 6, boxShadow: "0 18px 36px rgba(0,0,0,0.45)", zIndex: 20 };
+const menuItem = { width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "9px 10px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 };
+const menuDivider = { height: 1, background: "rgba(255,255,255,0.08)", margin: "6px 6px" };
 
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-  gap: 16,
-};
 
-const tileWrap = {
-  width: "100%",
-};
-
-const card = {
-  position: "relative",
-  background: "#6a625a",
+const alertStyle = {
+  position: "fixed",
+  top: 20,
+  left: "50%",
+  transform: "translateX(-50%)",
+  color: "#fff",
+  padding: "12px 20px",
   borderRadius: 10,
-  padding: 14,
+  zIndex: 9999,
+  fontWeight: 700,
+  fontSize: 14,
   display: "flex",
   alignItems: "center",
-  gap: 12,
-  cursor: "pointer",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.3)"
 };
 
-const iconBox = {
-  width: 44,
-  height: 34,
-  borderRadius: 8,
-  background: "rgba(246,163,0,0.18)",
+
+const overlay = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: "rgba(0,0,0,0.7)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  zIndex: 10000
+};
+
+const dialogBox = {
+  background: "#1a1a1a",
+  borderRadius: 12,
+  width: "90%",
+  maxWidth: 420,
+  boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+  border: "1px solid rgba(255,255,255,0.1)"
+};
+
+const dialogHeader = {
+  padding: "20px 24px 16px",
+  borderBottom: "1px solid rgba(255,255,255,0.1)"
+};
+
+const dialogTitle = {
+  margin: 0,
+  color: "#fff",
   fontSize: 18,
+  fontWeight: 900
 };
 
-const name = {
-  color: "#fff",
-  fontWeight: 900,
+const dialogBody = {
+  padding: "20px 24px"
+};
+
+const dialogMessage = {
+  margin: "0 0 16px 0",
+  color: "#d1d5db",
   fontSize: 14,
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  lineHeight: 1.5
 };
 
-const meta = { color: "rgba(255,255,255,0.7)", fontSize: 11 };
-
-const btnGhost = {
-  background: "transparent",
-  border: "1px solid rgba(246,163,0,0.4)",
-  color: "#f6a300",
-  borderRadius: 999,
-  fontWeight: 900,
-  padding: "8px 14px",
+const dialogSubMessage = {
+  margin: "-8px 0 16px 0",
+  color: "#9ca3af",
+  fontSize: 13,
+  lineHeight: 1.4
 };
 
-const btnPrimary = {
-  background: "#f6a300",
-  border: "none",
-  color: "#111",
-  borderRadius: 999,
-  fontWeight: 900,
-  padding: "8px 14px",
-};
-
-/* dots menu (same idea as folders page) */
-const dotsBtn = {
-  border: "none",
-  background: "transparent",
-  color: "#fff",
-  fontSize: 22,
-  lineHeight: "22px",
-  padding: "2px 6px",
-  cursor: "pointer",
-};
-
-const menu = {
-  position: "absolute",
-  top: 52,
-  right: 10,
-  width: 160,
-  background: "rgba(10,10,10,0.92)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  borderRadius: 10,
-  padding: 6,
-  boxShadow: "0 18px 36px rgba(0,0,0,0.45)",
-  zIndex: 20,
-};
-
-const menuItem = {
+const dialogInput = {
   width: "100%",
-  textAlign: "left",
-  border: "none",
-  background: "transparent",
-  padding: "9px 10px",
+  padding: "10px 12px",
   borderRadius: 8,
-  cursor: "pointer",
-  fontSize: 12,
-  fontWeight: 700,
+  border: "1px solid rgba(255,255,255,0.2)",
+  background: "#2a2a2a",
+  color: "#fff",
+  fontSize: 14,
+  outline: "none"
 };
 
-const menuDivider = {
-  height: 1,
-  background: "rgba(255,255,255,0.08)",
-  margin: "6px 6px",
+const optionsContainer = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 10
+};
+
+const optionButton = {
+  width: "100%",
+  padding: "12px 16px",
+  borderRadius: 8,
+  border: "1px solid rgba(246,163,0,0.3)",
+  background: "rgba(246,163,0,0.1)",
+  color: "#f6a300",
+  fontSize: 14,
+  fontWeight: 700,
+  cursor: "pointer",
+  textAlign: "left",
+  transition: "all 0.2s"
+};
+
+const dialogFooter = {
+  padding: "16px 24px 20px",
+  display: "flex",
+  gap: 10,
+  justifyContent: "flex-end",
+  borderTop: "1px solid rgba(255,255,255,0.1)"
+};
+
+const btnSecondary = {
+  background: "transparent",
+  border: "1px solid rgba(255,255,255,0.2)",
+  color: "#d1d5db",
+  borderRadius: 8,
+  fontWeight: 700,
+  padding: "10px 20px",
+  cursor: "pointer",
+  fontSize: 14
+};
+
+const btnDanger = {
+  background: "#ef4444",
+  border: "none",
+  color: "#fff",
+  borderRadius: 8,
+  fontWeight: 700,
+  padding: "10px 20px",
+  cursor: "pointer",
+  fontSize: 14
 };

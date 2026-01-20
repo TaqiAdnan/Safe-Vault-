@@ -14,17 +14,24 @@ export default function RegisterStep1() {
     confirmPassword: "",
   });
 
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const onNext = async (e) => {
     e.preventDefault();
 
     if (!form.fullName || !form.email || !form.password || !form.confirmPassword) {
-      alert("Please fill all fields.");
+      showAlert("Please fill all fields.");
       return;
     }
     if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match.");
+      showAlert("Passwords do not match.");
       return;
     }
 
@@ -49,7 +56,7 @@ export default function RegisterStep1() {
 
       navigate("/register/step2");
     } catch (err) {
-      alert(err.message || "Signup step 1 failed");
+      showAlert(err.message || "Signup step 1 failed");
     } finally {
       setLoading(false);
     }
@@ -57,6 +64,26 @@ export default function RegisterStep1() {
 
   return (
     <AuthLayout>
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <div className="row g-3">
         <div className="col-12 col-md-3">
           <ul style={{ color: "#d6d6d6", margin: 0, paddingLeft: 18, lineHeight: 1.9 }}>

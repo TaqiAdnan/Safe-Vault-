@@ -12,13 +12,20 @@ export default function Login() {
     password: "",
   });
 
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const onSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.email || !form.password) {
-      alert("Please enter email and password.");
+      showAlert("Please enter email and password.");
       return;
     }
 
@@ -53,14 +60,14 @@ export default function Login() {
         }
 
       if (data.code === "ACCOUNT_NOT_VERIFIED") {
-        alert("Account not verified. Please complete signup verification.");
+        showAlert("Account not verified. Please complete signup verification.");
         navigate("/register/step1");
         return;
       }
 
-      alert(data.message || "Login failed");
+      showAlert(data.message || "Login failed");
     } catch (err) {
-      alert(err.message || "Login failed");
+      showAlert(err.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -68,6 +75,26 @@ export default function Login() {
 
   return (
     <AuthLayout titleLeft="SafeVault Directory" titleRight="LOGIN TO YOUR ACCOUNT">
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <div className="row g-3 align-items-start">
         <div className="col-12 col-md-3">
           <ul style={{ color: "#d6d6d6", margin: 0, paddingLeft: 18, lineHeight: 1.9 }}>
@@ -118,7 +145,7 @@ export default function Login() {
             </div>
 
             <div className="text-center mt-2" style={{ color: "#d6d6d6", fontSize: 13 }}>
-              Don’t have an account?
+              Don't have an account?
               <div>
                 <Link to="/register/step1" style={{ color: "#f6a300", fontWeight: 800, textDecoration: "none" }}>
                   Sign Up

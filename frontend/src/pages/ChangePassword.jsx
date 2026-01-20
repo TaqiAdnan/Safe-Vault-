@@ -12,6 +12,12 @@ export default function ChangePassword() {
     confirmNewPassword: "",
   });
   const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (message, type = "success") => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 3000);
+  };
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -25,10 +31,10 @@ export default function ChangePassword() {
     e.preventDefault();
 
     if (!form.currentPassword || !form.newPassword || !form.confirmNewPassword) {
-      return alert("Please fill all fields.");
+      return showAlert("Please fill all fields.", "error");
     }
-    if (form.newPassword.length < 8) return alert("New password must be at least 8 characters.");
-    if (form.newPassword !== form.confirmNewPassword) return alert("New passwords do not match.");
+    if (form.newPassword.length < 8) return showAlert("New password must be at least 8 characters.", "error");
+    if (form.newPassword !== form.confirmNewPassword) return showAlert("New passwords do not match.", "error");
 
     try {
       setSaving(true);
@@ -42,11 +48,13 @@ export default function ChangePassword() {
         },
       });
 
-      alert("Password updated successfully.");
-      navigate("/vault/settings");
+      showAlert("Password updated successfully!");
+      setTimeout(() => {
+        navigate("/vault/settings");
+      }, 1500);
     } catch (err) {
       if (err.status === 401) return logout();
-      alert(err.message || "Failed to update password");
+      showAlert(err.message || "Failed to update password", "error");
     } finally {
       setSaving(false);
     }
@@ -54,6 +62,27 @@ export default function ChangePassword() {
 
   return (
     <div style={{ maxWidth: 520, margin: "40px auto", color: "white" }}>
+      {/* Alert Popup */}
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: alert.type === "error" ? "#ff5a5a" : "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <h3 style={{ fontWeight: 900, color: "#f6a300" }}>Change Password</h3>
 
       <form onSubmit={onSubmit} className="d-flex flex-column gap-3" style={{ background: "#111", padding: 20, borderRadius: 12 }}>
@@ -64,6 +93,7 @@ export default function ChangePassword() {
           value={form.currentPassword}
           onChange={onChange}
           placeholder="Current password"
+          autoComplete="new-password"
         />
 
         <input
@@ -73,6 +103,7 @@ export default function ChangePassword() {
           value={form.newPassword}
           onChange={onChange}
           placeholder="New password"
+          autoComplete="new-password"
         />
 
         <input
@@ -82,6 +113,7 @@ export default function ChangePassword() {
           value={form.confirmNewPassword}
           onChange={onChange}
           placeholder="Confirm new password"
+          autoComplete="new-password"
         />
 
         <button className="btn" type="submit" disabled={saving} style={{ background: "#f6a300", fontWeight: 900 }}>

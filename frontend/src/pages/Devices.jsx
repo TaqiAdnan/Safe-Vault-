@@ -17,10 +17,21 @@ export default function Devices() {
   const [loading, setLoading] = useState(true);
   const [devices, setDevices] = useState([]);
 
-  // Rename modal
   const [open, setOpen] = useState(false);
   const [activeDevice, setActiveDevice] = useState(null);
   const [name, setName] = useState("");
+
+  const [alert, setAlert] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
+  const showConfirm = (message, onConfirm) => {
+    setConfirmDialog({ message, onConfirm });
+  };
 
   const hardLogout = () => {
     localStorage.removeItem("authToken");
@@ -37,11 +48,10 @@ export default function Devices() {
   
       const res = await api("/settings/devices", { token });
   
-      // backend returns: { devices: [...] }
       setDevices(Array.isArray(res?.devices) ? res.devices : []);
     } catch (err) {
       if (err.status === 401) return hardLogout();
-      alert(err.message || "Failed to load devices");
+      showAlert(err.message || "Failed to load devices");
     } finally {
       setLoading(false);
     }
@@ -49,7 +59,7 @@ export default function Devices() {
   
   useEffect(() => {
     loadDevices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const onOpenRename = (d) => {
@@ -67,8 +77,6 @@ export default function Devices() {
   
     const MAX = 80;
     const trimmed = name.trim().slice(0, MAX);
-  
-   
   
     try {
       await api(`/settings/devices/${encodeURIComponent(activeDevice.deviceId)}`, {
@@ -90,47 +98,100 @@ export default function Devices() {
       setName("");
     } catch (err) {
       if (err.status === 401) return hardLogout();
-      alert(err.message || "Rename failed");
+      showAlert(err.message || "Rename failed");
     }
   };
-  
 
   const onRemove = async (deviceId) => {
-    if (!confirm("Remove this device?")) return;
+    showConfirm("Remove this device?", async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) return hardLogout();
 
-    const token = localStorage.getItem("authToken");
-    if (!token) return hardLogout();
+      try {
+        await api(`/settings/devices/${encodeURIComponent(deviceId)}`, {
+          method: "DELETE",
+          token,
+        });
 
-    try {
-      await api(`/settings/devices/${encodeURIComponent(deviceId)}`, {
-        method: "DELETE",
-        token,
-      });
-
-      setDevices((prev) => prev.filter((d) => d.deviceId !== deviceId));
-    } catch (err) {
-      if (err.status === 401) return hardLogout();
-      alert(err.message || "Remove failed");
-    }
+        setDevices((prev) => prev.filter((d) => d.deviceId !== deviceId));
+        setConfirmDialog(null);
+      } catch (err) {
+        if (err.status === 401) return hardLogout();
+        showAlert(err.message || "Remove failed");
+        setConfirmDialog(null);
+      }
+    });
   };
 
   const onRemoveAll = async () => {
-    if (!confirm("Remove ALL devices? This will require re-confirming devices on next login.")) return;
+    showConfirm("Remove ALL devices? This will require re-confirming devices on next login.", async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) return hardLogout();
 
-    const token = localStorage.getItem("authToken");
-    if (!token) return hardLogout();
-
-    try {
-      await api("/settings/devices", { method: "DELETE", token });
-      setDevices([]);
-    } catch (err) {
-      if (err.status === 401) return hardLogout();
-      alert(err.message || "Remove all failed");
-    }
+      try {
+        await api("/settings/devices", { method: "DELETE", token });
+        setDevices([]);
+        setConfirmDialog(null);
+      } catch (err) {
+        if (err.status === 401) return hardLogout();
+        showAlert(err.message || "Remove all failed");
+        setConfirmDialog(null);
+      }
+    });
   };
 
   return (
     <div style={pageWrap}>
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
+      {confirmDialog && (
+        <div style={overlay} onClick={() => setConfirmDialog(null)}>
+          <div style={dialogBox} onClick={(e) => e.stopPropagation()}>
+            <div style={dialogHeader}>
+              <h3 style={dialogTitle}>Confirm Action</h3>
+            </div>
+
+            <div style={dialogBody}>
+              <p style={dialogMessage}>{confirmDialog.message}</p>
+            </div>
+
+            <div style={dialogFooter}>
+              <button
+                style={btnSecondary}
+                onClick={() => setConfirmDialog(null)}
+              >
+                Cancel
+              </button>
+              
+              <button
+                style={btnDanger}
+                onClick={() => confirmDialog.onConfirm()}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={panel}>
         <div style={panelHeader}>
           <div>
@@ -158,7 +219,7 @@ export default function Devices() {
             <div style={{ color: "#d6d6d6", fontWeight: 800 }}>
               Account: <span style={{ color: "#f6a300" }}>{sessionEmail || "User"}</span>
             </div>
-            <div style={hint}>Tip: Remove devices you don’t recognize.</div>
+            <div style={hint}>Tip: Remove devices you don't recognize.</div>
           </div>
 
           <div className="table-responsive" style={{ marginTop: 14 }}>
@@ -246,7 +307,7 @@ export default function Devices() {
                 </button>
 
                 <div style={{ color: "#bdbdbd", fontSize: 12, lineHeight: 1.6 }}>
-                  Note: “Last used” is updated automatically by the backend when you log in from that device.
+                  Note: "Last used" is updated automatically by the backend when you log in from that device.
                 </div>
               </form>
             </div>
@@ -257,7 +318,6 @@ export default function Devices() {
   );
 }
 
-/* ===== Helpers ===== */
 function formatDate(iso) {
   try {
     if (!iso) return "—";
@@ -274,8 +334,6 @@ function shortId(id) {
   return `${id.slice(0, 6)}...${id.slice(-4)}`;
 }
 
-/* ===== Styles ===== */
-// (نفس الستايل اللي عندك بدون تغيير)
 const deviceDot = { display: "inline-block", width: 10, height: 10, borderRadius: "50%", marginRight: 10, verticalAlign: "middle", background: "#f6a300" };
 const pageWrap = { width: "100%", minHeight: "calc(100vh - 120px)", display: "flex", justifyContent: "center", alignItems: "center" };
 const panel = { width: "100%", maxWidth: 1120, padding: 22, borderRadius: 18, background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 18px 40px rgba(0,0,0,0.25)" };
@@ -295,3 +353,78 @@ const modal = { width: "100%", maxWidth: 520, background: "#111", borderRadius: 
 const label = { color: "#d6d6d6", fontWeight: 800, fontSize: 12, marginBottom: 6 };
 const inputStyle = { background: "#6a625a", border: "none", color: "white", borderRadius: 10 };
 const miniGhost = { background: "transparent", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", borderRadius: 10 };
+
+const overlay = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: "rgba(0,0,0,0.7)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 10000
+};
+
+const dialogBox = {
+  background: "#1a1a1a",
+  borderRadius: 12,
+  width: "90%",
+  maxWidth: 420,
+  boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+  border: "1px solid rgba(255,255,255,0.1)"
+};
+
+const dialogHeader = {
+  padding: "20px 24px 16px",
+  borderBottom: "1px solid rgba(255,255,255,0.1)"
+};
+
+const dialogTitle = {
+  margin: 0,
+  color: "#fff",
+  fontSize: 18,
+  fontWeight: 900
+};
+
+const dialogBody = {
+  padding: "20px 24px"
+};
+
+const dialogMessage = {
+  margin: 0,
+  color: "#d1d5db",
+  fontSize: 14,
+  lineHeight: 1.5
+};
+
+const dialogFooter = {
+  padding: "16px 24px 20px",
+  display: "flex",
+  gap: 10,
+  justifyContent: "flex-end",
+  borderTop: "1px solid rgba(255,255,255,0.1)"
+};
+
+const btnSecondary = {
+  background: "transparent",
+  border: "1px solid rgba(255,255,255,0.2)",
+  color: "#d1d5db",
+  borderRadius: 8,
+  fontWeight: 700,
+  padding: "10px 20px",
+  cursor: "pointer",
+  fontSize: 14
+};
+
+const btnDanger = {
+  background: "#ef4444",
+  border: "none",
+  color: "#fff",
+  borderRadius: 8,
+  fontWeight: 700,
+  padding: "10px 20px",
+  cursor: "pointer",
+  fontSize: 14
+};

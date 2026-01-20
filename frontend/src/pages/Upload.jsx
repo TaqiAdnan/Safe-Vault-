@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Upload() {
   const { folderId } = useParams();
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   const [files, setFiles] = useState([]);
@@ -12,10 +13,16 @@ export default function Upload() {
 
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [alert, setAlert] = useState(null);
 
   const supportsText = "supporting docs: pdf, docx, txt, png";
 
   const token = localStorage.getItem("authToken");
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
 
   const pickFiles = () => fileInputRef.current?.click();
 
@@ -41,12 +48,12 @@ export default function Upload() {
 
   const startUpload = () => {
     if (!files.length) {
-      alert("Please choose a file first.");
+      showAlert("Please choose a file first.");
       return;
     }
 
     if (!folderId) {
-      alert("Missing folderId in the route.");
+      showAlert("Missing folderId in the route.");
       return;
     }
 
@@ -73,23 +80,26 @@ export default function Upload() {
       setUploading(false);
 
       if (xhr.status >= 200 && xhr.status < 300) {
-        alert("Upload complete.");
+        showAlert("The file uploaded successfully!");
         setFiles([]);
         setProgress(0);
+        setTimeout(() => {
+          navigate(`/vault/folders/${folderId}`);
+        }, 1500);
         return;
       }
 
       try {
         const data = JSON.parse(xhr.responseText || "{}");
-        alert(data?.message || "Upload failed");
+        showAlert(data?.message || "Upload failed");
       } catch {
-        alert("Upload failed");
+        showAlert("Upload failed");
       }
     };
 
     xhr.onerror = () => {
       setUploading(false);
-      alert("Network error");
+      showAlert("Network error");
     };
 
     xhr.send(fd);
@@ -103,13 +113,32 @@ export default function Upload() {
 
   return (
     <div style={pageWrap}>
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <div style={panel}>
         <div style={title}>Upload Your File</div>
 
         <div style={card}>
           <div style={cardTitle}>UPLOAD</div>
 
-          {/* Drop zone */}
           <div
             style={{
               ...dropZone,
@@ -145,7 +174,6 @@ export default function Upload() {
             />
           </div>
 
-          {/* File list */}
           {files.length > 0 && (
             <div style={fileList}>
               {files.map((file, i) => (
@@ -165,7 +193,6 @@ export default function Upload() {
             </div>
           )}
 
-          {/* Upload info */}
           <div style={{ marginTop: 12 }}>
             <div style={uploadingLabel}>{uploadingText}</div>
 
@@ -179,7 +206,6 @@ export default function Upload() {
           </button>
         </div>
 
-        {/* Floating + button */}
         <button
           type="button"
           style={plusCircle}
@@ -195,14 +221,12 @@ export default function Upload() {
   );
 }
 
-/* helpers */
 function truncate(str, max) {
   if (!str) return "";
   if (str.length <= max) return str;
   return str.slice(0, max - 1) + "…";
 }
 
-/* ===== styles ===== */
 const pageWrap = {
   width: "100%",
   display: "flex",

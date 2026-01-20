@@ -25,6 +25,8 @@ export default function Notes() {
 
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null); // { message: '' }
+  const [dialog, setDialog] = useState(null); // { type: 'confirm', title, message, onConfirm, onCancel }
 
   // Modal state
   const [open, setOpen] = useState(false);
@@ -34,6 +36,11 @@ export default function Notes() {
   // Editor fields
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -52,7 +59,7 @@ export default function Notes() {
         );
       } catch (e) {
         // fallback to demo to keep UI working during backend dev
-        setNotes(demoNotes);
+        setNotes([]);
       } finally {
         setLoading(false);
       }
@@ -117,6 +124,7 @@ export default function Notes() {
       );
 
       setMode("view");
+      showAlert("Note saved successfully!");
     } catch (e) {
       alert(e.message);
     }
@@ -124,15 +132,28 @@ export default function Notes() {
 
   const remove = async () => {
     if (!activeId) return;
-    if (!confirm("Delete this note?")) return;
 
-    try {
-      await api(`/notes/${activeId}`, { method: "DELETE" });
-      setNotes((prev) => prev.filter((n) => n.id !== activeId));
-      closeModal();
-    } catch (e) {
-      alert(e.message);
-    }
+    setDialog({
+      type: 'confirm',
+      title: 'Delete Note',
+      message: 'Are you sure you want to delete this note?',
+      subMessage: 'This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      danger: true,
+      onConfirm: async () => {
+        setDialog(null);
+        try {
+          await api(`/notes/${activeId}`, { method: "DELETE" });
+          setNotes((prev) => prev.filter((n) => n.id !== activeId));
+          closeModal();
+          showAlert("Note deleted successfully!");
+        } catch (e) {
+          alert(e.message);
+        }
+      },
+      onCancel: () => setDialog(null)
+    });
   };
 
   const addNew = async () => {
@@ -173,16 +194,69 @@ export default function Notes() {
 
   return (
     <div style={page}>
-      {/* Header row (like “Notes ˅”) */}
+      {/* Alert Popup */}
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10000,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
+      {/* Dialog Overlay */}
+      {dialog && (
+        <div style={dialogOverlay} onClick={() => dialog.onCancel?.()}>
+          <div style={dialogBox} onClick={(e) => e.stopPropagation()}>
+            <div style={dialogHeader}>
+              <h3 style={dialogTitle}>{dialog.title}</h3>
+            </div>
+
+            <div style={dialogBody}>
+              <p style={dialogMessage}>{dialog.message}</p>
+              {dialog.subMessage && (
+                <p style={dialogSubMessage}>{dialog.subMessage}</p>
+              )}
+            </div>
+
+            <div style={dialogFooter}>
+              <button
+                style={btnSecondary}
+                onClick={() => dialog.onCancel?.()}
+              >
+                {dialog.cancelText || 'Cancel'}
+              </button>
+              
+              <button
+                style={dialog.danger ? btnDangerDialog : btnPrimary}
+                onClick={() => dialog.onConfirm()}
+              >
+                {dialog.confirmText || 'OK'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header row (like "Notes ˅") */}
       <div style={topRow}>
         <div style={topLeft}>
           <div style={topTitle}>Notes</div>
           {loading && <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Loading…</div>}
         </div>
 
-        <div style={topRightIcon} title="Profile">
-          <span style={{ fontSize: 14 }}>👤</span>
-        </div>
+        
       </div>
 
       {/* Notes grid */}
@@ -294,7 +368,7 @@ function preview(text) {
   return clean.length > 28 ? clean.slice(0, 28) + "..." : clean;
 }
 
-/* ================= Styles ================= */
+
 const page = {
   width: "100%",
   minHeight: "calc(100vh - 110px)",
@@ -492,4 +566,87 @@ const btnDanger = {
   fontWeight: 900,
   padding: "10px 16px",
   cursor: "pointer",
+};
+
+// Dialog styles
+const dialogOverlay = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: "rgba(0,0,0,0.7)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 10000
+};
+
+const dialogBox = {
+  background: "#1a1a1a",
+  borderRadius: 12,
+  width: "90%",
+  maxWidth: 420,
+  boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+  border: "1px solid rgba(255,255,255,0.1)"
+};
+
+const dialogHeader = {
+  padding: "20px 24px 16px",
+  borderBottom: "1px solid rgba(255,255,255,0.1)"
+};
+
+const dialogTitle = {
+  margin: 0,
+  color: "#fff",
+  fontSize: 18,
+  fontWeight: 900
+};
+
+const dialogBody = {
+  padding: "20px 24px"
+};
+
+const dialogMessage = {
+  margin: "0 0 16px 0",
+  color: "#d1d5db",
+  fontSize: 14,
+  lineHeight: 1.5
+};
+
+const dialogSubMessage = {
+  margin: "-8px 0 0 0",
+  color: "#9ca3af",
+  fontSize: 13,
+  lineHeight: 1.4
+};
+
+const dialogFooter = {
+  padding: "16px 24px 20px",
+  display: "flex",
+  gap: 10,
+  justifyContent: "flex-end",
+  borderTop: "1px solid rgba(255,255,255,0.1)"
+};
+
+const btnSecondary = {
+  background: "transparent",
+  border: "1px solid rgba(255,255,255,0.2)",
+  color: "#d1d5db",
+  borderRadius: 8,
+  fontWeight: 700,
+  padding: "10px 20px",
+  cursor: "pointer",
+  fontSize: 14
+};
+
+const btnDangerDialog = {
+  background: "#ef4444",
+  border: "none",
+  color: "#fff",
+  borderRadius: 8,
+  fontWeight: 700,
+  padding: "10px 20px",
+  cursor: "pointer",
+  fontSize: 14
 };

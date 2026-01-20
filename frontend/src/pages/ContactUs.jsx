@@ -2,20 +2,47 @@ import { useState } from "react";
 
 export default function ContactUs() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
   const onChange = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
   const submit = (e) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
-    alert("Message sent (demo).");
+    showAlert("Message sent (demo).");
     setForm({ name: "", email: "", message: "" });
   };
 
   return (
     <div style={page}>
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <div style={card}>
         <div style={title}>Contact Us</div>
-        <div style={sub}>Send us a message and we’ll get back to you.</div>
+        <div style={sub}>Send us a message and we'll get back to you.</div>
 
         <form onSubmit={submit} style={formWrap}>
           <div style={row}>

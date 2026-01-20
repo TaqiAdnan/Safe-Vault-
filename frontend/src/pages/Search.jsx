@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 export default function Search() {
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState("all"); // all | notes | files | folders
+  const [tab, setTab] = useState("all"); 
   const [q, setQ] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -61,7 +61,7 @@ export default function Search() {
 
   const openFolder = (folderId) => navigate(`/vault/folders/${folderId}`);
   const openFile = (file) => {
-    // we only know folderId from backend
+    
     if (file.folderId) navigate(`/vault/folders/${file.folderId}`);
     else navigate(`/vault/folders`);
   };
@@ -213,7 +213,7 @@ function EmptyRow({ children }) {
   return <div style={emptyRow}>{children}</div>;
 }
 
-/* ================= Styles ================= */
+
 const page = {
   width: "100%",
   minHeight: "calc(100vh - 110px)",

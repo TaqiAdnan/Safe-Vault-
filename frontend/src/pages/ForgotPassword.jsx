@@ -7,12 +7,9 @@ export default function ForgotPassword() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-
-
-  const [step, setStep] = useState(1); // 1=email, 2=code+new pass
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
 
-  // backend reset session
   const [resetToken, setResetToken] = useState(() => sessionStorage.getItem("reset_token") || "");
   const [meta, setMeta] = useState(() => {
     try {
@@ -22,15 +19,19 @@ export default function ForgotPassword() {
     }
   });
 
-  // code digits
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const inputsRef = useRef([]);
 
-  // passwords
   const [pw, setPw] = useState({ newPassword: "", confirmPassword: "" });
 
-  // simple inline error
   const [error, setError] = useState("");
+
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (message) => {
+    setAlert({ message });
+    setTimeout(() => setAlert(null), 3000);
+  };
 
   useEffect(() => {
     if (step === 2) {
@@ -38,7 +39,6 @@ export default function ForgotPassword() {
     }
   }, [step]);
 
-  // If refresh on step 2 but token missing, go back to step 1
   useEffect(() => {
     if (step === 2 && !resetToken) {
       setStep(1);
@@ -53,7 +53,7 @@ export default function ForgotPassword() {
 
   const sendCode = async () => {
     const em = email.trim().toLowerCase();
-    if (!em) return alert(" enter your email address.");
+    if (!em) return showAlert(" enter your email address.");
   
     try {
       setLoading(true);
@@ -87,10 +87,6 @@ export default function ForgotPassword() {
       setLoading(false);
     }
   };
-  
-  
-  
-  
 
   const onChangeDigit = (idx, value) => {
     setError("");
@@ -159,7 +155,7 @@ export default function ForgotPassword() {
         },
       });
 
-      alert(data?.message || "Password updated. Please login.");
+      showAlert(data?.message || "Password updated. Please login.");
       sessionStorage.removeItem("reset_token");
       sessionStorage.removeItem("reset_meta");
       setResetToken("");
@@ -193,7 +189,6 @@ export default function ForgotPassword() {
   };
 
   const resendCode = async () => {
-    // just reuse sendCode
     await sendCode();
   };
 
@@ -203,8 +198,27 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout titleLeft="SafeVault Directory" titleRight="RESET YOUR PASSWORD">
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <div className="row g-3">
-        {/* Left bullets */}
         <div className="col-12 col-md-3">
           <ul style={{ color: "#d6d6d6", margin: 0, paddingLeft: 18, lineHeight: 1.9 }}>
             <li>Unified</li>
@@ -213,7 +227,6 @@ export default function ForgotPassword() {
           </ul>
         </div>
 
-        {/* Center */}
         <div className="col-12 col-md-6 d-flex justify-content-center">
           <div className="w-100" style={{ maxWidth: 520 }}>
             <div className="text-center mb-2" style={{ color: "#f6a300", fontWeight: 900 }}>
@@ -265,7 +278,6 @@ export default function ForgotPassword() {
                     {expiresHint && <div style={{ fontSize: 12, fontWeight: 800, marginTop: 6 }}>{expiresHint}</div>}
                   </div>
 
-                  {/* code boxes */}
                   <div className="d-flex justify-content-center gap-2 mt-3" onPaste={onPaste}>
                     {digits.map((d, idx) => (
                       <input
@@ -334,7 +346,6 @@ export default function ForgotPassword() {
           </div>
         </div>
 
-        {/* Right icon */}
         <div className="col-12 col-md-3 d-flex justify-content-end align-items-start">
           <div style={iconBox} title="SafeVault" aria-label="SafeVault">
             ▣
@@ -345,7 +356,6 @@ export default function ForgotPassword() {
   );
 }
 
-/* styles */
 const grayCard = {
   background: "#d9d9d9",
   borderRadius: 10,

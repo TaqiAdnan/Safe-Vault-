@@ -8,8 +8,9 @@ export default function EditProfile() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState(null); 
 
-  const [questions, setQuestions] = useState([]); // array of strings (fixed keys)
+  const [questions, setQuestions] = useState([]); 
   const [initial, setInitial] = useState({ fullName: "", email: "" });
 
   const [form, setForm] = useState({
@@ -18,6 +19,11 @@ export default function EditProfile() {
     securityQuestion: "",
     securityAnswer: "",
   });
+
+  const showAlert = (message, type = "success") => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 3000);
+  };
 
   const hardLogout = () => {
     localStorage.removeItem("authToken");
@@ -34,7 +40,7 @@ export default function EditProfile() {
 
         const [me, q] = await Promise.all([
           api("/settings/me", { token }),
-          api("/settings/security-questions"), // public
+          api("/settings/security-questions"), 
         ]);
 
         const list = Array.isArray(q) ? q : q.questions || q.data || [];
@@ -51,20 +57,20 @@ export default function EditProfile() {
         }));
       } catch (err) {
         if (err.status === 401) return hardLogout();
-        alert(err.message || "Failed to load profile");
+        showAlert(err.message || "Failed to load profile", "error");
       } finally {
         setLoading(false);
       }
     };
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const labelForQuestion = (key) => {
-    if (key === "pet") return "What is your first pet’s name?";
+    if (key === "pet") return "What is your first pet's name?";
     if (key === "city") return "In what city were you born?";
     if (key === "school") return "What is the name of your first school?";
     return key; // fallback
@@ -74,17 +80,17 @@ export default function EditProfile() {
     e.preventDefault();
 
     if (!form.fullName.trim() || !form.email.trim()) {
-      return alert("Please fill full name and email.");
+      return showAlert("Please fill full name and email.", "error");
     }
 
     if (form.securityQuestion && !form.securityAnswer.trim()) {
-      return alert("Please enter the security answer.");
+      return showAlert("Please enter the security answer.", "error");
     }
 
     try {
       setSaving(true);
 
-      // 1) update profile if changed
+      
       const patchMe = {};
       if (form.fullName.trim() !== initial.fullName) patchMe.fullName = form.fullName.trim();
       if (form.email.trim().toLowerCase() !== initial.email.toLowerCase()) patchMe.email = form.email.trim();
@@ -93,7 +99,7 @@ export default function EditProfile() {
         await api("/settings/me", { method: "PATCH", token, body: patchMe });
       }
 
-      // 2) update security question if provided
+      
       if (form.securityQuestion) {
         await api("/settings/security-question", {
           method: "PATCH",
@@ -105,12 +111,14 @@ export default function EditProfile() {
         });
       }
 
-      alert("Updated successfully.");
-      navigate("/vault/settings");
+      showAlert("Updated successfully!");
+      setTimeout(() => {
+        navigate("/vault/settings");
+      }, 1500);
     } catch (err) {
       if (err.status === 401) return hardLogout();
-      if (err.status === 409) return alert("Email already in use.");
-      alert(err.message || "Update failed");
+      if (err.status === 409) return showAlert("Email already in use.", "error");
+      showAlert(err.message || "Update failed", "error");
     } finally {
       setSaving(false);
     }
@@ -126,6 +134,27 @@ export default function EditProfile() {
 
   return (
     <div style={pageWrap}>
+      {/* Alert Popup */}
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 18px",
+          borderRadius: 8,
+          background: alert.type === "error" ? "#ff5a5a" : "#f6a300",
+          color: "#111",
+          fontWeight: 700,
+          zIndex: 10001,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {alert.message}
+        </div>
+      )}
+
       <div style={panel}>
         <div style={panelHeader}>
           <div>
