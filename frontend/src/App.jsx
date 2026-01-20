@@ -9,6 +9,8 @@ import VerifyLogin from "./pages/VerifyLogin";
 import VerifyCode from "./pages/VerifyCode";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
+import VerifyMfa from "./pages/VerifyMfa";
+import EnableMfa from "./pages/EnableMfa";
 
 // Vault layout + pages
 import Layout from "./components/Layout";
@@ -46,6 +48,7 @@ export default function App() {
       <Route path="/verify-code" element={<VerifyCode />} />
       <Route path="/VerifyCode" element={<Navigate to="/verify-code" replace />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/verify-mfa" element={<VerifyMfa />} />
 
       {/* Vault (nested routes) */}
       <Route path="/vault" element={<Layout />}>

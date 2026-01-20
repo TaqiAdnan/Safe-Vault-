@@ -1,5 +1,7 @@
 // src/controllers/authController.js
 const authService = require("../services/authService");
+const mfaService = require("../services/mfaService");
+const { signAuthToken } = require("../utils/jwt"); 
 
 exports.signupStep1 = async (req, res) => {
   const result = await authService.signupStep1(req.body);
@@ -35,3 +37,29 @@ exports.forgotPasswordReset = async (req, res) => {
   return res.status(result.status).json(result.body);
 };
 
+
+exports.mfaSetup = async (req, res) => {
+  const result = await mfaService.setupTotp(req.user.id);
+  res.status(result.status).json(result.body);
+};
+
+exports.mfaEnable = async (req, res) => {
+  const result = await mfaService.enableTotp(req.user.id, req.body);
+  res.status(result.status).json(result.body);
+};
+
+exports.mfaDisable = async (req, res) => {
+  const result = await mfaService.disableTotp(req.user.id);
+  res.status(result.status).json(result.body);
+};
+
+exports.mfaVerifyLogin = async (req, res) => {
+  const result = await mfaService.verifyMfaLogin(req.mfa.userId, req.body);
+  if (result.status !== 200) return res.status(result.status).json(result.body);
+
+  return res.status(200).json({
+    message: "Login verified",
+    token: signAuthToken(req.mfa.userId),
+    redirectTo: "/vault",
+  });
+};

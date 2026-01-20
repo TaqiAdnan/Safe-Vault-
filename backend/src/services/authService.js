@@ -4,7 +4,7 @@ const User = require("../models/User");
 const { signSignupToken, signAuthToken } = require("../utils/jwt");
 const { signDeviceTempToken } = require("../utils/jwt");
 const { makeDeviceId, makeDeviceLabel } = require("../utils/device");
-const { signResetToken } = require("../utils/jwt");
+const { signResetToken, signMfaLoginToken } = require("../utils/jwt");
 
 const getOtp = () => {
   if (process.env.NODE_ENV !== "production") {
@@ -125,7 +125,7 @@ exports.verifySignup = async (signup, { code }) => {
 };
 exports.login = async ({ email, password, deviceName }, req) => {
   const user = await User.findOne({ email }).select(
-    "_id fullName email status isVerified passwordHash trustedDevices securityQuestion"
+    "_id fullName email status isVerified passwordHash trustedDevices securityQuestion mfaEnabled mfaTotpSecret"
   );
 
   if (!user) {
@@ -144,41 +144,56 @@ exports.login = async ({ email, password, deviceName }, req) => {
     return { status: 401, body: { message: "Invalid email or password", code: "INVALID_CREDENTIALS" } };
   }
 
-  // device check
   const deviceId = makeDeviceId(req, deviceName || "");
   const known = (user.trustedDevices || []).some((d) => d.deviceId === deviceId);
 
-  if (known) {
-    // update lastUsedAt
-    await User.updateOne(
-      { _id: user._id, "trustedDevices.deviceId": deviceId },
-      { $set: { "trustedDevices.$.lastUsedAt": new Date() } }
-    );
-
+  // 1) If device is NOT trusted => keep your current flow (confirm device)
+  if (!known) {
     return {
       status: 200,
       body: {
-        message: "Login successful",
-        token: signAuthToken(user._id),
-        user: sanitizeUser(user),
-        redirectTo: "/vault",
+        message: "New device detected",
+        code: "NEW_DEVICE",
+        nextStep: "confirm_device",
+        tempToken: signDeviceTempToken(user._id, deviceId),
+        securityQuestion: user.securityQuestion || "Security question not set",
+        redirectTo: "/confirm-device",
       },
     };
   }
 
-  //  New device => return tempToken + show confirm-device screen
+  // 2) Device is trusted => update lastUsedAt (but we can also do it after MFA)
+  // If MFA is enabled => require MFA before issuing auth token
+  if (user.mfaEnabled) {
+    // (optional) you can postpone lastUsedAt update until MFA succeeds
+    return {
+      status: 200,
+      body: {
+        message: "MFA required",
+        code: "MFA_REQUIRED",
+        mfaTempToken: signMfaLoginToken(user._id, deviceId),
+        redirectTo: "/verify-mfa",
+      },
+    };
+  }
+
+  // 3) No MFA => normal login
+  await User.updateOne(
+    { _id: user._id, "trustedDevices.deviceId": deviceId },
+    { $set: { "trustedDevices.$.lastUsedAt": new Date() } }
+  );
+
   return {
     status: 200,
     body: {
-      message: "New device detected",
-      code: "NEW_DEVICE",
-      nextStep: "confirm_device",
-      tempToken: signDeviceTempToken(user._id, deviceId),
-      securityQuestion: user.securityQuestion || "Security question not set",
-      redirectTo: "/confirm-device",
+      message: "Login successful",
+      token: signAuthToken(user._id),
+      user: sanitizeUser(user),
+      redirectTo: "/vault",
     },
   };
 };
+
 exports.confirmDevice = async (payload, { securityAnswer, deviceName }, req) => {
   const { userId, deviceId } = payload;
 
@@ -244,7 +259,6 @@ exports.forgotPasswordRequest = async ({ email }) => {
     "_id email status isVerified"
   );
 
-  // ❌ Email not found
   if (!user) {
     return {
       status: 404,
@@ -255,7 +269,6 @@ exports.forgotPasswordRequest = async ({ email }) => {
     };
   }
 
-  // ❌ Account exists but not verified / active
   if (user.status !== "ACTIVE" || user.isVerified !== true) {
     return {
       status: 403,
@@ -266,7 +279,6 @@ exports.forgotPasswordRequest = async ({ email }) => {
     };
   }
 
-  // ✅ Generate reset OTP
   const otp = getResetOtp();
   const otpHash = await bcrypt.hash(otp, 10);
 

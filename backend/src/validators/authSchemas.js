@@ -27,7 +27,6 @@ const confirmDeviceSchema = Joi.object({
   deviceName: Joi.string().max(80).allow("").optional(),
 });
 
-// forgot password
 const forgotPasswordRequestSchema = Joi.object({
   email: Joi.string().email().lowercase().trim().required(),
 });
@@ -37,6 +36,11 @@ const forgotPasswordResetSchema = Joi.object({
   newPassword: Joi.string().min(8).max(100).required(),
 });
 
+const mfaCodeSchema = Joi.object({
+  code: Joi.string().pattern(/^\d{6}$/).required(),
+});
+
+
 module.exports = {
   signupStep1Schema,
   signupStep2Schema,
@@ -45,4 +49,5 @@ module.exports = {
   confirmDeviceSchema,
   forgotPasswordRequestSchema,
   forgotPasswordResetSchema,
+  mfaCodeSchema,
 };

@@ -40,6 +40,13 @@ export default function Login() {
         },
       });
 
+      if (data.code === "MFA_REQUIRED" && data.mfaTempToken) {
+        sessionStorage.setItem("mfa_temp", data.mfaTempToken);
+        navigate(data.redirectTo || "/verify-mfa");
+        return;
+      }
+      
+
       if (data.token) {
         localStorage.setItem("authToken", data.token);
         navigate(data.redirectTo || "/vault/search");

@@ -6,12 +6,12 @@ const requireSignupToken = require("../middlewares/requireSignupToken");
 const validate = require("../middlewares/validate");
 const schemas = require("../validators/authSchemas");
 const requireResetToken = require("../middlewares/requireResetToken");
-
+const requireAuthToken = require("../middlewares/requireAuthToken");
+const requireMfaLoginToken = require("../middlewares/requireMfaLoginToken");
 const router = express.Router();
 
 router.post("/signup/step1", validate(schemas.signupStep1Schema), authController.signupStep1);
 
-// Step2 + Verify لازم Token
 router.post(
   "/signup/step2",
   requireSignupToken,
@@ -46,5 +46,11 @@ router.post(
   validate(schemas.forgotPasswordResetSchema),
   authController.forgotPasswordReset
 );
+
+router.post("/mfa/setup", requireAuthToken, authController.mfaSetup);
+router.post("/mfa/enable", requireAuthToken, validate(schemas.mfaCodeSchema), authController.mfaEnable);
+router.post("/mfa/disable", requireAuthToken, authController.mfaDisable);
+
+router.post("/mfa/verify-login", requireMfaLoginToken, validate(schemas.mfaCodeSchema), authController.mfaVerifyLogin);
 
 module.exports = router;

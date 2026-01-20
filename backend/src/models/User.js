@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
     otpExpiresAt: { type: Date },
     resetOtpHash: { type: String, default: null },
     resetOtpExpiresAt: { type: Date, default: null },
+    mfaEnabled: { type: Boolean, default: false },
+    mfaMethod: { type: String, enum: ["totp"], default: "totp" },
+    mfaTotpSecret: { type: String, default: null }, 
+    mfaVerifiedAt: { type: Date, default: null },
+
 
     trustedDevices: [
       {

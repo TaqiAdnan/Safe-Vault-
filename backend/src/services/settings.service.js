@@ -1,7 +1,6 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
 
-// --- small helpers ---
 const httpError = (statusCode, message) => {
   const err = new Error(message);
   err.statusCode = statusCode;
@@ -10,7 +9,8 @@ const httpError = (statusCode, message) => {
 
 exports.getMe = async (userId) => {
   const user = await User.findById(userId).select(
-    "fullName email passwordHash securityQuestion securityAnswerHash trustedDevices status isVerified"
+    "fullName email passwordHash securityQuestion securityAnswerHash trustedDevices status isVerified mfaEnabled"
+
   );
 
   if (!user) throw httpError(404, "User not found");
@@ -23,6 +23,7 @@ exports.getMe = async (userId) => {
     hasPassword: !!user.passwordHash,
     securityQuestion: user.securityQuestion,
     hasSecurityAnswer: !!user.securityAnswerHash,
+    mfaEnabled: !!user.mfaEnabled,
   };
 };
 

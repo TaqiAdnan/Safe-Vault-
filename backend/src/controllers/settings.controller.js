@@ -7,6 +7,7 @@ exports.getSecurityQuestions = (req, res) => {
 
 exports.getMe = async (req, res, next) => {
   try {
+    res.set("Cache-Control", "no-store");
     const data = await settingsService.getMe(req.user.id);
     return res.json(data);
   } catch (e) {

@@ -14,6 +14,7 @@ export default function Settings() {
     isVerified: false,
     securityQuestion: null,
     hasSecurityAnswer: false,
+    mfaEnabled: false,
   });
 
   const token = localStorage.getItem("authToken");
@@ -38,6 +39,7 @@ export default function Settings() {
           isVerified: !!data.isVerified,
           securityQuestion: data.securityQuestion ?? null,
           hasSecurityAnswer: !!data.hasSecurityAnswer,
+          mfaEnabled: !!data.mfaEnabled,
         });
       } catch (err) {
         if (err.status === 401) return hardLogout();
@@ -121,9 +123,32 @@ export default function Settings() {
                   CHANGE PASSWORD
                 </button>
 
-                <button className="btn" style={pillBtn} onClick={() => navigate("/vault/change-password")}>
-                  DELETE ACCOUNT
-                </button>  
+                {me.mfaEnabled ? (
+                <button
+                  className="btn"
+                  style={{ ...pillBtn, background: "#ff4d4d", color: "#fff" }}
+                  onClick={async () => {
+                    if (!confirm("Disable MFA?")) return;
+
+                    try {
+                      await api("/auth/mfa/disable", { method: "POST", token });
+                      setMe((prev) => ({ ...prev, mfaEnabled: false }));
+                      alert("MFA disabled");
+                    } catch (err) {
+                      if (err.status === 401) return hardLogout();
+                      alert(err.message || "Failed to disable MFA");
+                    }
+                  }}
+                >
+                  DISABLE MFA
+                </button>
+              ) : (
+                <button className="btn" style={pillBtn} onClick={() => navigate("/vault/mfa")}>
+                  ENABLE MFA
+                </button>
+              )}
+
+
               </div>
             </div>
 

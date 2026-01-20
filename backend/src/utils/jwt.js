@@ -44,10 +44,21 @@ const verifyToken = (token) => {
   return jwt.verify(token, mustGetSecret());
 };
 
+const signMfaLoginToken = (userId, deviceId) => {
+  return jwt.sign(
+    { userId: String(userId), purpose: "mfa_login", deviceId },
+    mustGetSecret(),
+    { expiresIn: process.env.MFA_LOGIN_EXPIRES_IN || "10m" }
+  );
+};
+
+
+
 module.exports = {
   signSignupToken,
   signAuthToken,
   signDeviceTempToken,
   signResetToken, 
   verifyToken,
+  signMfaLoginToken
 };
